@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser-Based Polar Solver</title>
+    <!-- Load PyScript -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    
+    <style>
+        body { font-family: system-ui; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
+        .app-container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 450px; }
+        input { width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        #output { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+        .loading { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h2>Polar Integral Solver</h2>
+    <p class="loading" id="status">Loading Python Environment (SymPy)...</p>
+    
+    <label>Function f(x, y):</label>
+    <input type="text" id="expr" placeholder="x**2 + y**2">
+
+    <label>r bounds (lower, upper):</label>
+    <div style="display:flex; gap:10px;">
+        <input type="text" id="r_s" placeholder="0">
+        <input type="text" id="r_e" placeholder="1">
+    </div>
+
+    <label>Theta bounds (lower, upper):</label>
+    <div style="display:flex; gap:10px;">
+        <input type="text" id="t_s" placeholder="0">
+        <input type="text" id="t_e" placeholder="pi">
+    </div>
+
+    <button py-click="solve_integral">Calculate</button>
+
+    <div id="output">Results will appear here...</div>
+</div>
+
+<!-- Define Python Dependencies -->
+<py-config>
+    packages = ["sympy"]
+</py-config>
+
+<py-script>
+from sympy import symbols, sympify, cos, sin, simplify, integrate, pretty
+from pyscript import display, document
+
+def solve_integral(event):
+    output_div = document.querySelector("#output")
+    try:
+        # Define symbols
+        x, y, r, theta = symbols('x y r theta')
+        
+        # Get inputs
+        expr_str = document.querySelector("#expr").value
+        rs = document.querySelector("#r_s").value
+        re = document.querySelector("#r_e").value
+        ts = document.querySelector("#t_s").value
+        te = document.querySelector("#t_e").value
+
+        # 1. Transform to Polar
+        f_xy = sympify(expr_str)
+        f_polar = simplify(f_xy.subs({x: r*cos(theta), y: r*sin(theta)}) * r)
+
+        # 2. Integrate
+        res = integrate(f_polar, (r, sympify(rs), sympify(re)), (theta, sympify(ts), sympify(te)))
+        
+        output_div.innerText = f"Polar Form: {f_polar}\n\nResult: {res}"
+    except Exception as e:
+        output_div.innerText = f"Error: {str(e)}"
+
+# Hide loading message once ready
+document.querySelector("#status").style.display = "none"
+</py-script>
+
+</body>
+</html>
